@@ -729,7 +729,7 @@ progressmeter(int flag)
 	static off_t lastsize, totalsize;
 	struct timeval now, td, wait;
 	off_t cursize, abbrevsize;
-	double elapsed;
+	int64_t elapsedx;
 	int ratio, barlength, i, remaining;
 	char buf[256];
 
@@ -781,16 +781,16 @@ progressmeter(int flag)
 		wait.tv_sec = 0;
 	}
 	timersub(&now, &start, &td);
-	elapsed = td.tv_sec + (td.tv_usec / 1000000.0);
+	elapsedx = td.tv_sec*1000000ULL + td.tv_usec;
 
 	if (wait.tv_sec >= STALLTIME) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
 			 " - stalled -");
-	} else if (statbytes <= 0 || elapsed <= 0.0 || cursize > totalsize || chunked) {
+	} else if (statbytes <= 0 || elapsedx <= 0 || cursize > totalsize || chunked) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
 			 "   --:-- ETA");
 	} else {
-		remaining = (int) (totalsize / (statbytes / elapsed) - elapsed);
+		remaining = (totalsize * elapsedx / statbytes - elapsedx)/1000000ULL;
 		i = remaining / 3600;
 		if (i)
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
