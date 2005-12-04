@@ -1,0 +1,5 @@
+#!/bin/sh
+mkdir build
+ln -s ../.config build/.config
+make O=build oldconfig
+make -C build
