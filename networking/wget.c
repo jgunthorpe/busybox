@@ -40,7 +40,7 @@ struct host_info {
 };
 
 static void parse_url(char *url, struct host_info *h);
-static FILE *open_socket(struct sockaddr_in *s_in);
+static FILE *open_socket(struct bb_addrinfo *s_ai);
 static char *gethdr(char *buf, size_t bufsiz, FILE *fp, int *istrunc);
 static int ftpcmd(char *s1, char *s2, FILE *fp, char *buf);
 
@@ -174,7 +174,7 @@ int wget_main(int argc, char **argv)
 	char *extra_headers_ptr = extra_headers;
 	int extra_headers_left = sizeof(extra_headers);
 	struct host_info server, target;
-	struct sockaddr_in s_in;
+	struct bb_addrinfo s_ai;
 	llist_t *headers_llist = NULL;
 
 	FILE *sfp = NULL;		/* socket to web/ftp server	    */
@@ -224,6 +224,8 @@ int wget_main(int argc, char **argv)
 	parse_url(argv[optind], &target);
 	server.host = target.host;
 	server.port = target.port;
+
+	printf("Target '%s'\n",target.host);
 
 	/*
 	 * Use the proxy if necessary.
@@ -291,11 +293,10 @@ int wget_main(int argc, char **argv)
 	/* We want to do exactly _one_ DNS lookup, since some
 	 * sites (i.e. ftp.us.debian.org) use round-robin DNS
 	 * and we want to connect to only one IP... */
-	bb_lookup_host(&s_in, server.host);
-	s_in.sin_port = server.port;
+	bb_lookup_host(&s_ai, server.host, server.port);
 	if (quiet_flag==FALSE) {
 		fprintf(stdout, "Connecting to %s[%s]:%d\n",
-				server.host, inet_ntoa(s_in.sin_addr), ntohs(server.port));
+				server.host, bb_ptoa(&s_ai), bb_getport(&s_ai));
 	}
 
 	if (use_proxy || !target.is_ftp) {
@@ -312,7 +313,7 @@ int wget_main(int argc, char **argv)
 			 * Open socket to http server
 			 */
 			if (sfp) fclose(sfp);
-			sfp = open_socket(&s_in);
+			sfp = open_socket(&s_ai);
 
 			/*
 			 * Send HTTP request.
@@ -413,8 +414,7 @@ read_response:
 							server.host = target.host;
 							server.port = target.port;
 						}
-						bb_lookup_host(&s_in, server.host);
-						s_in.sin_port = server.port;
+						bb_lookup_host(&s_ai, server.host, server.port);
 						break;
 					}
 				}
@@ -431,7 +431,7 @@ read_response:
 		if (! target.user)
 			target.user = bb_xstrdup("anonymous:busybox@");
 
-		sfp = open_socket(&s_in);
+		sfp = open_socket(&s_ai);
 		if (ftpcmd(NULL, NULL, sfp, buf) != 220)
 			close_delete_and_die("%s", buf+4);
 
@@ -473,13 +473,17 @@ read_response:
 		 */
 		if (ftpcmd("PASV", NULL, sfp, buf) !=  227)
 			close_delete_and_die("PASV: %s", buf+4);
+
 		s = strrchr(buf, ',');
 		*s = 0;
 		port = atoi(s+1);
 		s = strrchr(buf, ',');
 		port += atoi(s+1) * 256;
-		s_in.sin_port = htons(port);
-		dfp = open_socket(&s_in);
+		if (s_ai.ai_family == AF_INET)
+				((struct sockaddr_in *)&s_ai.ai_addr)->sin_port = htons(port);
+		if (s_ai.ai_family == AF_INET6)
+				((struct sockaddr_in6 *)&s_ai.ai_addr)->sin6_port = htons(port);
+		dfp = open_socket(&s_ai);
 
 		if (do_continue) {
 			sprintf(buf, "REST %ld", beg_range);
@@ -585,7 +589,7 @@ void parse_url(char *url, struct host_info *h)
 		char *ep;
 
 		ep = h->host + 1;
-		while (*ep == ':' || isxdigit (*ep))
+		while (*ep != ']')
 			ep++;
 		if (*ep == ']') {
 			h->host++;
@@ -598,16 +602,16 @@ void parse_url(char *url, struct host_info *h)
 	cp = strchr(pp, ':');
 	if (cp != NULL) {
 		*cp++ = '\0';
-		h->port = htons(atoi(cp));
+		h->port = atoi(cp);
 	}
 }
 
 
-FILE *open_socket(struct sockaddr_in *s_in)
+FILE *open_socket(struct bb_addrinfo *s_ai)
 {
 	FILE *fp;
 
-	fp = fdopen(xconnect(s_in), "r+");
+	fp = fdopen(xconnect(s_ai), "r+");
 	if (fp == NULL)
 		bb_perror_msg_and_die("fdopen()");
 

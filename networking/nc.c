@@ -66,7 +66,7 @@ int nc_main(int argc, char **argv)
 				do_listen++;
 				break;
 			case 'p':
-				lport = bb_lookup_port(optarg, "tcp", 0);
+				lport = htons(bb_lookup_port(optarg, "tcp", 0));
 				break;
 			case 'i':
 				delay = atoi(optarg);

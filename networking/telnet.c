@@ -616,7 +616,7 @@ static void cookmode(void)
 extern int telnet_main(int argc, char** argv)
 {
 	int len;
-	struct sockaddr_in s_in;
+	struct bb_addrinfo s_ai;
 #ifdef USE_POLL
 	struct pollfd ufds[2];
 #else
@@ -649,20 +649,18 @@ extern int telnet_main(int argc, char** argv)
 	if (flags & 1)
 		autologin = getenv("USER");
 	
-	if (optind < argc) {
-		bb_lookup_host(&s_in, argv[optind++]);
-		s_in.sin_port = bb_lookup_port((optind < argc) ? argv[optind++] :
-				"telnet", "tcp", 23);
-		if (optind < argc)
-			bb_show_usage();
+	if (optind + 1 <= argc) {
+		bb_lookup_host(&s_ai, argv[optind],
+					   bb_lookup_port((optind + 1 < argc) ? argv[optind + 1] :
+									  "telnet", "tcp", 23));
 	} else
 		bb_show_usage();
 #else
-	bb_lookup_host(&s_in, argv[1]);
-	s_in.sin_port = bb_lookup_port((argc == 3) ? argv[2] : "telnet", "tcp", 23);
+	bb_lookup_host(&s_ai, argv[1],
+				   (argc == 3) ? argv[2] : "telnet", "tcp", 23);
 #endif
 
-	G.netfd = xconnect(&s_in);
+	G.netfd = xconnect(&s_ai);
 
 	setsockopt(G.netfd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof one);
 

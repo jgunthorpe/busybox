@@ -51,7 +51,7 @@
 typedef struct ftp_host_info_s {
 	char *user;
 	char *password;
-	struct sockaddr_in *s_in;
+	struct bb_addrinfo *s_ai;
 } ftp_host_info_t;
 
 static char verbose_flag = 0;
@@ -98,8 +98,11 @@ static int xconnect_ftpdata(ftp_host_info_t *server, const char *buf)
 	*buf_ptr = '\0';
 	port_num += atoi(buf_ptr + 1) * 256;
 
-	server->s_in->sin_port=htons(port_num);
-	return(xconnect(server->s_in));
+	if (server->s_ai->ai_family == AF_INET)
+			((struct sockaddr_in *)&server->s_ai->ai_addr)->sin_port = htons(port_num);
+	if (server->s_ai->ai_family == AF_INET6)
+			((struct sockaddr_in6 *)&server->s_ai->ai_addr)->sin6_port = htons(port_num);
+	return(xconnect(server->s_ai));
 }
 
 static FILE *ftp_login(ftp_host_info_t *server)
@@ -108,7 +111,7 @@ static FILE *ftp_login(ftp_host_info_t *server)
 	char buf[512];
 
 	/* Connect to the command socket */
-	control_stream = fdopen(xconnect(server->s_in), "r+");
+	control_stream = fdopen(xconnect(server->s_ai), "r+");
 	if (control_stream == NULL) {
 		bb_perror_msg_and_die("Couldnt open control stream");
 	}
@@ -301,7 +304,7 @@ int ftpgetput_main(int argc, char **argv)
 
 	/* socket to ftp server */
 	FILE *control_stream;
-	struct sockaddr_in s_in;
+	struct bb_addrinfo s_ai;
 
 	/* continue a prev transfer (-c) */
 	ftp_host_info_t *server;
@@ -355,12 +358,11 @@ int ftpgetput_main(int argc, char **argv)
 	/* We want to do exactly _one_ DNS lookup, since some
 	 * sites (i.e. ftp.us.debian.org) use round-robin DNS
 	 * and we want to connect to only one IP... */
-	server->s_in = &s_in;
-	bb_lookup_host(&s_in, argv[optind]);
-	s_in.sin_port = bb_lookup_port(port, "tcp", 21);
+	server->s_ai = &s_ai;
+	bb_lookup_host(&s_ai, argv[optind],bb_lookup_port(port, "tcp", 21));
 	if (verbose_flag) {
 		printf("Connecting to %s[%s]:%d\n",
-				argv[optind], inet_ntoa(s_in.sin_addr), ntohs(s_in.sin_port));
+				argv[optind], bb_ptoa(&s_ai), bb_getport(&s_ai));
 	}
 
 	/*  Connect/Setup/Configure the FTP session */

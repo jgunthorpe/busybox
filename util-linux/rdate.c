@@ -33,17 +33,17 @@ static void socket_timeout(int sig)
 static time_t askremotedate(const char *host)
 {
 	unsigned long nett;
-	struct sockaddr_in s_in;
+	struct bb_addrinfo s_ai;
 	int fd;
 
-	bb_lookup_host(&s_in, host);
-	s_in.sin_port = bb_lookup_port("time", "tcp", 37);
+	bb_lookup_host(&s_ai, host,
+		       bb_lookup_port("time", "tcp", 37));
 
 	/* Add a timeout for dead or inaccessible servers */
 	alarm(10);
 	signal(SIGALRM, socket_timeout);
 
-	fd = xconnect(&s_in);
+	fd = xconnect(&s_ai);
 
 	if (safe_read(fd, (void *)&nett, 4) != 4)    /* read time from server */
 		bb_error_msg_and_die("%s did not send the complete time", host);

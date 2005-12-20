@@ -290,9 +290,23 @@ extern struct hostent *xgethostbyname(const char *name);
 extern struct hostent *xgethostbyname2(const char *name, int af);
 extern int create_icmp_socket(void);
 extern int create_icmp6_socket(void);
-extern int xconnect(struct sockaddr_in *s_addr);
-extern unsigned short bb_lookup_port(const char *port, const char *protocol, unsigned short default_port);
-extern void bb_lookup_host(struct sockaddr_in *s_in, const char *host);
+extern unsigned short bb_lookup_port(const char *port, const char *protocol,
+				     unsigned short default_port);
+
+struct bb_addrinfo
+{
+	int ai_family;
+	int ai_socktype;
+	int ai_protocol;
+	int ai_addrlen;
+	struct sockaddr_storage ai_addr;
+};
+
+unsigned int bb_getport(const struct bb_addrinfo *s_ai);
+const char *bb_ptoa(const struct bb_addrinfo *s_ai);
+extern int xconnect(const struct bb_addrinfo *s_ai);
+extern void bb_lookup_host(struct bb_addrinfo *s_ai, const char *host,
+			   unsigned int port);
 
 //#warning wrap this?
 char *dirname (char *path);
