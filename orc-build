@@ -8,8 +8,9 @@ CROSS := $(CX)/bin/powerpc-405-linux-gnu-
 .PHONY: all setup link build cx-install
 all: build
 
+# Busybox explodes on parallel make.
 build:
-	make -C $(BUILD)
+	$(MAKE) -j1 -C $(BUILD)
 
 ifeq ($(words $(wildcard $(BUILD)/.config)),0)
 build: setup
@@ -33,4 +34,4 @@ cx-install: build
 $(BUILD)/.config: .config
 	mkdir -p $(BUILD)
 	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CROSS)"|' < $< > $@
-	make O=$(BUILD) oldconfig > /dev/null
+	$(MAKE) -j1 O=$(BUILD) oldconfig > /dev/null
