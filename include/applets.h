@@ -414,6 +414,9 @@
 #ifdef CONFIG_MD5SUM
 	APPLET(md5sum, md5sum_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
 #endif
+#ifdef CONFIG_MDEV
+	APPLET(mdev, mdev_main, _BB_DIR_SBIN, _BB_SUID_NEVER)
+#endif
 #ifdef CONFIG_MESG
 	APPLET(mesg, mesg_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
 #endif
@@ -673,7 +676,7 @@
 #ifdef CONFIG_TOUCH
 	APPLET(touch, touch_main, _BB_DIR_BIN, _BB_SUID_NEVER)
 #endif
-#ifdef CONFIG_TR
+#if ENABLE_TR
 	APPLET(tr, tr_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
 #endif
 #ifdef CONFIG_TRACEROUTE
@@ -736,7 +739,7 @@
 #ifdef CONFIG_WATCH
 	APPLET(watch, watch_main, _BB_DIR_BIN, _BB_SUID_NEVER)
 #endif
-#ifdef CONFIG_WATCHDOG
+#if ENABLE_WATCHDOG
 	APPLET(watchdog, watchdog_main, _BB_DIR_SBIN, _BB_SUID_NEVER)
 #endif
 #ifdef CONFIG_WC

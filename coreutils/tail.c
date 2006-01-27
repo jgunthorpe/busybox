@@ -96,7 +96,7 @@ static ssize_t tail_read(int fd, char *buf, size_t count)
 
 static const char tail_opts[] =
 	"fn:c:"
-#ifdef CONFIG_FEATURE_FANCY_TAIL
+#if ENABLE_FEATURE_FANCY_TAIL
 	"qs:v"
 #endif
 	;
@@ -121,6 +121,7 @@ int tail_main(int argc, char **argv)
 	char *s, *buf;
 	const char *fmt;
 
+#if defined CONFIG_FEATURE_SUSv2 || ENABLE_FEATURE_FANCY_TAIL
 	/* Allow legacy syntax of an initial numeric option without -n. */
 	if (argc >=2 && ((argv[1][0] == '+') || ((argv[1][0] == '-')
 			/* && (isdigit)(argv[1][1]) */
@@ -130,6 +131,7 @@ int tail_main(int argc, char **argv)
 		optarg = argv[1];
 		goto GET_COUNT;
 	}
+#endif
 
 	while ((opt = getopt(argc, argv, tail_opts)) > 0) {
 		switch (opt) {
@@ -140,7 +142,9 @@ int tail_main(int argc, char **argv)
 				count_bytes = 1;
 				/* FALLS THROUGH */
 			case 'n':
+#if defined CONFIG_FEATURE_SUSv2 || ENABLE_FEATURE_FANCY_TAIL
 			GET_COUNT:
+#endif
 				count = bb_xgetlarg10_sfx(optarg, tail_suffixes);
 				/* Note: Leading whitespace is an error trapped above. */
 				if (*optarg == '+') {
@@ -152,7 +156,7 @@ int tail_main(int argc, char **argv)
 					count = -count;
 				}
 				break;
-#ifdef CONFIG_FEATURE_FANCY_TAIL
+#if ENABLE_FEATURE_FANCY_TAIL
 			case 'q':
 				header_threshhold = INT_MAX;
 				break;

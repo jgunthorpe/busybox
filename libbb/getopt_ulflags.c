@@ -294,7 +294,9 @@ bb_getopt_ulflags (int argc, char **argv, const char *applet_opts, ...)
 	va_list p;
 	const struct option *l_o;
 	unsigned long trigger;
+#ifdef CONFIG_PS
 	char **pargv = NULL;
+#endif
 	int min_arg = 0;
 	int max_arg = -1;
 
@@ -311,7 +313,7 @@ bb_getopt_ulflags (int argc, char **argv, const char *applet_opts, ...)
 	memset(on_off, 0, sizeof(complementally));
 
 	/* skip GNU extension */
-	s = applet_opts;
+	s = (const unsigned char *)applet_opts;
 	if(*s == '+' || *s == '-')
 		s++;
 	for (; *s; s++) {
@@ -345,7 +347,7 @@ bb_getopt_ulflags (int argc, char **argv, const char *applet_opts, ...)
 			c++;
 		}
 	}
-	for (s = bb_opt_complementally; s && *s; s++) {
+	for (s = (const unsigned char *)bb_opt_complementally; s && *s; s++) {
 		t_complementally *pair;
 		unsigned long *pair_switch;
 

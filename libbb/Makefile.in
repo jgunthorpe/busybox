@@ -34,10 +34,9 @@ LIBBB_SRC-y:= \
 	getopt_ulflags.c default_error_retval.c wfopen_input.c speed_table.c \
 	perror_nomsg_and_die.c perror_nomsg.c skip_whitespace.c bb_askpass.c \
 	warn_ignoring_args.c concat_subpath_file.c vfork_daemon_rexec.c \
-	bb_echo.c
+	bb_echo.c bb_do_delay.c
 
 LIBBB_SRC-$(CONFIG_FEATURE_SHADOWPASSWDS)+= pwd2spwd.c
-LIBBB_SRC-$(CONFIG_IFCONFIG)+=interface.c
 
 LIBBB_OBJS=$(patsubst %.c,$(LIBBB_DIR)%.o, $(LIBBB_SRC-y))
 

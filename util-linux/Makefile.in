@@ -24,6 +24,7 @@ UTILLINUX-$(CONFIG_HWCLOCK)       +=hwclock.o
 UTILLINUX-$(CONFIG_IPCRM)         +=ipcrm.o
 UTILLINUX-$(CONFIG_IPCS)          +=ipcs.o
 UTILLINUX-$(CONFIG_LOSETUP)       +=losetup.o
+UTILLINUX-$(CONFIG_MDEV)          +=mdev.o
 UTILLINUX-$(CONFIG_MKFS_MINIX)    +=mkfs_minix.o
 UTILLINUX-$(CONFIG_MKSWAP)        +=mkswap.o
 UTILLINUX-$(CONFIG_MORE)          +=more.o
@@ -33,7 +34,7 @@ UTILLINUX-$(CONFIG_PIVOT_ROOT)    +=pivot_root.o
 UTILLINUX-$(CONFIG_RDATE)         +=rdate.o
 UTILLINUX-$(CONFIG_READPROFILE)   +=readprofile.o
 UTILLINUX-$(CONFIG_SWAPONOFF)     +=swaponoff.o
-UTILLINUX-$(CONFIG_SWITCH_ROOT)     +=switch_root.o
+UTILLINUX-$(CONFIG_SWITCH_ROOT)   +=switch_root.o
 UTILLINUX-$(CONFIG_UMOUNT)        +=umount.o
 
 libraries-y+=$(UTILLINUX_DIR)$(UTILLINUX_AR)
