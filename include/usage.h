@@ -766,7 +766,7 @@
 	"/etc/passwd\n"
 
 #define fold_trivial_usage \
-	"[-bsw] [FILE]"
+	"[-bs] [-w WIDTH] [FILE]"
 #define fold_full_usage \
 	"Wrap input lines in each FILE (standard input by default), writing to\n" \
 	"standard output.\n\n" \
@@ -1087,13 +1087,14 @@
 	"daemon:x:1:1:daemon:/usr/sbin:/bin/sh\n"
 
 #define hexdump_trivial_usage \
-	"[-[bcdefnosvx]] [OPTION] FILE"
+	"[-[bcCdefnosvx]] [OPTION] FILE"
 #define hexdump_full_usage \
 	"The hexdump utility is a filter which displays the specified files,\n" \
 	"or the standard input, if no files are specified, in a user specified\n" \
 	"format\n" \
 	"\t-b\t\tOne-byte octal display\n" \
 	"\t-c\t\tOne-byte character display\n" \
+	"\t-C\t\tCanonical hex+ASCII, 16 bytes per line\n" \
 	"\t-d\t\tTwo-byte decimal display\n" \
 	"\t-e FORMAT STRING\n" \
 	"\t-f FORMAT FILE\n" \
@@ -1656,13 +1657,18 @@
 	"\t-f\t\toutput data as the log grows"
 
 #define losetup_trivial_usage \
-	"[OPTION]... LOOPDEVICE FILE\n" \
-	"or: losetup [OPTION]... -d LOOPDEVICE"
+	"[-od] LOOPDEVICE [FILE]"
 #define losetup_full_usage \
-	"Associate LOOPDEVICE with FILE.\n\n" \
+	"Associate LOOPDEVICE with FILE, or display current association.\n\n" \
 	"Options:\n" \
 	"\t-d\t\tDisassociate LOOPDEVICE\n" \
 	"\t-o OFFSET\tStart OFFSET bytes into FILE"
+#define losetup_notes_usage \
+	"One argument (losetup /dev/loop1) will display the current association\n" \
+	"(if any), or disassociate it (with -d).  The display shows the offset\n" \
+	"and filename of the file the loop device is currently bound to.\n\n" \
+	"Two arguments (losetup /dev/loop1 file.img) create a new association,\n" \
+	"with an optional offset (-o 12345).  Encryption is not yet supported.\n\n"
 
 #ifdef CONFIG_FEATURE_LS_TIMESTAMPS
 #  define USAGE_LS_TIMESTAMPS(a) a
@@ -1835,6 +1841,26 @@
 	"busybox: OK\n" \
 	"^D\n"
 
+#define mdev_trivial_usage \
+	"[-s]"
+#define mdev_full_usage \
+	"\ts\tScan /sys and populate /dev during system boot\n\n" \
+	"Called with no options (via hotplug) it uses environment variables\n" \
+	"to determine which device to add/remove."
+#ifdef CONFIG_FEATURE_MDEV_CONFIG
+#define mdev_notes_usage \
+	"The mdev config file contains lines that look like:\n" \
+        "  hd[a-z][0-9]* 0:3 660\n\n" \
+        "That's device name (with regex match), uid:gid, and permissions.\n\n" \
+	"Optionally, that can be followed (on the same line) by an asterisk\n" \
+	"and a command line to run after creating the corresponding device(s),\n"\
+	"ala:\n\n" \
+	"  hdc root:cdrom 660  *ln -s hdc cdrom\n\n" \
+	"Config file parsing stops on the first matching line.  If no config\n"\
+	"entry is matched, devices are created with default 0:0 660.  (Make\n"\
+	"the last line match .* to override this.)\n\n"
+#endif
+
 #define mesg_trivial_usage \
 	"[y|n]"
 #define mesg_full_usage \
@@ -1945,18 +1971,74 @@
 	"-rw-------    1 andersen andersen        0 Apr 25 17:10 /tmp/temp.mWiLjM\n"
 
 #define modprobe_trivial_usage \
-	"[-knqrsv] [MODULE ...]"
+	"[-knqrsv] MODULE [symbol=value ...]"
 #define modprobe_full_usage \
-	"Used for high level module loading and unloading.\n\n" \
 	"Options:\n" \
 	"\t-k\tMake module autoclean-able\n" \
 	"\t-n\tJust show what would be done\n" \
 	"\t-q\tQuiet output\n" \
 	"\t-r\tRemove module (stacks) or do autoclean\n" \
 	"\t-s\tReport via syslog instead of stderr\n" \
-	"\t-v\tVerbose output"
+	"\t-v\tVerbose output\n\n"
+#define modprobe_notes_usage \
+"modprobe can (un)load a stack of modules, passing each module options (when\n" \
+"loading). modprobe uses a configuration file to determine what option(s) to\n" \
+"pass each module it loads.\n" \
+"\n" \
+"The configuration file is searched (in order) amongst:\n" \
+"\n" \
+"    /etc/modprobe.conf (2.6 only)\n" \
+"    /etc/modules.conf\n" \
+"    /etc/conf.modules (deprecated)\n" \
+"\n" \
+"They all have the same syntax (see below). If none is present, it is\n" \
+"_not_ an error; each loaded module is then expected to load without\n" \
+"options. Once a file is found, the others are tested for.\n" \
+"\n" \
+"/etc/modules.conf entry format:\n" \
+"\n" \
+"  alias <alias_name> <mod_name>\n" \
+"    Makes it possible to modprobe alias_name, when there is no such module.\n" \
+"    It makes sense if your mod_name is long, or you want a more reprenstative\n" \
+"    name for that module (eg. 'scsi' in place of 'aha7xxx').\n" \
+"    This makes it also possible to use a different set of options (below) for\n" \
+"    the module and the alias.\n" \
+"    A module can be aliased more than once.\n" \
+"\n" \
+"  options <mod_name|alias_name> <symbol=value ...>\n" \
+"    When loading module mod_name (or the module aliased by alias_name), pass\n" \
+"    the \"symbol=value\" pairs as option to that module.\n" \
+"\n" \
+"Sample /etc/modules.conf file:\n" \
+"\n" \
+"  options tulip irq=3\n" \
+"  alias tulip tulip2\n" \
+"  options tulip2 irq=4 io=0x308\n" \
+"\n" \
+"Other functionality offered by 'classic' modprobe is not available in\n" \
+"this implementation.\n" \
+"\n" \
+"If module options are present both in the config file, and on the command line,\n" \
+"then the options from the command line will be passed to the module _after_\n" \
+"the options from the config file. That way, you can have defaults in the config\n" \
+"file, and override them for a specific usage from the command line.\n"
 #define modprobe_example_usage \
-	"$ modprobe cdrom\n"
+	"(with the above /etc/modules.conf):\n\n" \
+	"$ modprobe tulip\n" \
+	"   will load the module 'tulip' with default option 'irq=3'\n\n" \
+	"$ modprobe tulip irq=5\n" \
+	"   will load the module 'tulip' with option 'irq=5', thus overriding the default\n\n" \
+	"$ modprobe tulip2\n" \
+	"   will load the module 'tulip' with default options 'irq=4 io=0x308',\n" \
+	"   which are the default for alias 'tulip2'\n\n" \
+	"$ modprobe tulip2 irq=8\n" \
+	"   will load the module 'tulip' with default options 'irq=4 io=0x308 irq=8',\n" \
+	"   which are the default for alias 'tulip2' overriden by the option 'irq=8'\n\n" \
+	"   from the command line\n\n" \
+	"$ modprobe tulip2 irq=2 io=0x210\n" \
+	"   will load the module 'tulip' with default options 'irq=4 io=0x308 irq=4 io=0x210',\n" \
+	"   which are the default for alias 'tulip2' overriden by the options 'irq=2 io=0x210'\n\n" \
+	"   from the command line\n"
 
 #define more_trivial_usage \
 	"[FILE ...]"
@@ -1978,8 +2060,7 @@
 #define mount_trivial_usage \
 	"[flags] DEVICE NODE [-o options,more-options]"
 #define mount_full_usage \
-	"Mount a filesystem.  Autodetection of filesystem type requires the\n" \
-	"/proc filesystem be already mounted.\n\n" \
+	"Mount a filesystem.  Filesystem autodetection requires /proc be mounted.\n\n" \
 	"Flags:\n"  \
 	"\t-a:\t\tMount all filesystems in fstab\n" \
 	USAGE_MTAB( \
@@ -1997,12 +2078,13 @@
 	"\tdev/nodev:\tAllow use of special device files / disallow them\n" \
 	"\texec/noexec:\tAllow use of executable files / disallow them\n" \
 	USAGE_MOUNT_LOOP( \
-	"\tloop:\t\tMounts a file via loop device\n" \
+	"\tloop:\t\t Ignored (loop devices are autodetected)\n" \
 	) \
 	"\tsuid/nosuid:\tAllow set-user-id-root programs / disallow them\n" \
 	"\tremount:\tRe-mount a mounted filesystem, changing its flags\n" \
 	"\tro/rw:\t\tMount for read-only / read-write\n" \
-	"\tbind:\t\tUse the linux 2.4.x \"bind\" feature\n" \
+	"\tbind:\t\tBind a directory to an additional location\n" \
+	"\tmove:\t\tRelocate an existing mount point.\n" \
 	"\nThere are EVEN MORE flags that are specific to each filesystem\n" \
 	"You'll have to see the written documentation for those filesystems"
 #define mount_example_usage \
@@ -2011,7 +2093,8 @@
 	"proc on /proc type proc (rw)\n" \
 	"devpts on /dev/pts type devpts (rw)\n" \
 	"$ mount /dev/fd0 /mnt -t msdos -o ro\n" \
-	"$ mount /tmp/diskimage /opt -t ext2 -o loop\n"
+	"$ mount /tmp/diskimage /opt -t ext2 -o loop\n" \
+	"$ mount cd_image.iso mydir\n"
 
 #define mountpoint_trivial_usage \
 	"[-q] <[-d] DIR | -x DEVICE>"
@@ -2758,10 +2841,12 @@
 	"\t-a\tStart swapping on all swap devices"
 
 #define switch_root_trivial_usage \
-	"NEW_ROOT NEW_INIT [ARGUMENTS_TO_INIT]"
+	"[-c /dev/console] NEW_ROOT NEW_INIT [ARGUMENTS_TO_INIT]"
 #define switch_root_full_usage \
 	"Use from PID 1 under initramfs to free initramfs, chroot to NEW_ROOT,\n" \
-	"and exec NEW_INIT.\n"
+	"and exec NEW_INIT.\n\n" \
+	"Options:\n" \
+	"\t-c\tRedirect console to device on new root"
 
 #define sync_trivial_usage \
 	""

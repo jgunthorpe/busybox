@@ -10,20 +10,7 @@
  * Based on wget.c by Chip Rosenthal Covad Communications
  * <chip@laserlink.net>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
  */
 
 #include <sys/types.h>
@@ -156,6 +143,9 @@ static int ftp_recieve(ftp_host_info_t *server, FILE *control_stream,
 		if (safe_strtoul(buf + 4, &value))
 			bb_error_msg_and_die("SIZE error: %s", buf + 4);
 		filesize = value;
+	} else {
+		filesize = -1;
+		do_continue = 0;
 	}
 
 	if ((local_path[0] == '-') && (local_path[1] == '\0')) {
@@ -198,8 +188,12 @@ static int ftp_recieve(ftp_host_info_t *server, FILE *control_stream,
 	}
 
 	/* Copy the file */
-	if (bb_copyfd_size(fd_data, fd_local, filesize) == -1) {
-		exit(EXIT_FAILURE);
+	if (filesize != -1) {
+		if (-1 == bb_copyfd_size(fd_data, fd_local, filesize))
+			exit(EXIT_FAILURE);
+	} else {
+		if (-1 == bb_copyfd_eof(fd_data, fd_local))
+			exit(EXIT_FAILURE);
 	}
 
 	/* close it all down */
@@ -229,10 +223,6 @@ static int ftp_send(ftp_host_info_t *server, FILE *control_stream,
 	}
 	fd_data = xconnect_ftpdata(server, buf);
 
-	if (ftpcmd("CWD ", server_path, control_stream, buf) != 250) {
-		bb_error_msg_and_die("CWD error: %s", buf + 4);
-	}
-
 	/* get the local file */
 	if ((local_path[0] == '-') && (local_path[1] == '\0')) {
 		fd_local = STDIN_FILENO;
@@ -252,7 +242,7 @@ static int ftp_send(ftp_host_info_t *server, FILE *control_stream,
 			break;
 		}
 	}
-	response = ftpcmd("STOR ", local_path, control_stream, buf);
+	response = ftpcmd("STOR ", server_path, control_stream, buf);
 	switch (response) {
 	case 125:
 	case 150:

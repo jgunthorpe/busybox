@@ -1,28 +1,21 @@
 # Rules.make for busybox
 #
-# Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# Licensed under GPLv2, see the file LICENSE in this tarball for details.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#
+
+# Pull in the user's busybox configuration
+ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
+-include $(top_builddir)/.config
+endif
 
 #--------------------------------------------------------
 PROG      := busybox
 MAJOR_VERSION   :=1
 MINOR_VERSION   :=1
 SUBLEVEL_VERSION:=0
-EXTRAVERSION    :=-pre1
+EXTRAVERSION    :=
 VERSION   :=$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL_VERSION)$(EXTRAVERSION)
 BUILDTIME := $(shell TZ=UTC date -u "+%Y.%m.%d-%H:%M%z")
 
@@ -84,12 +77,18 @@ CFLAGS_EXTRA=$(subst ",, $(strip $(EXTRA_CFLAGS_OPTIONS)))
 # For other libraries, you are on your own.  But these may (or may not) help...
 #LDFLAGS+=-nostdlib
 #LIBRARIES:=$(LIBCDIR)/lib/libc.a -lgcc
-#CROSS_CFLAGS+=-nostdinc -I$(LIBCDIR)/include -I$(GCCINCDIR)
+#CROSS_CFLAGS+=-nostdinc -I$(LIBCDIR)/include -I$(GCCINCDIR) -funsigned-char
 #GCCINCDIR:=$(shell gcc -print-search-dirs | sed -ne "s/install: \(.*\)/\1include/gp")
 
 WARNINGS=-Wall -Wstrict-prototypes -Wshadow
 CFLAGS=-I$(top_builddir)/include -I$(top_srcdir)/include -I$(srcdir)
 ARFLAGS=cru
+
+
+# gcc centric. Perhaps fiddle with findstring gcc,$(CC) for the rest
+# get the CC MAJOR/MINOR version
+CC_MAJOR:=$(shell printf "%02d" $(shell echo __GNUC__ | $(CC) -E -xc - | tail -n 1))
+CC_MINOR:=$(shell printf "%02d" $(shell echo __GNUC_MINOR__ | $(CC) -E -xc - | tail -n 1))
 
 #--------------------------------------------------------
 export VERSION BUILDTIME HOSTCC HOSTCFLAGS CROSS CC AR AS LD NM STRIP CPP
@@ -108,11 +107,6 @@ TARGET_ARCH:=$(shell $(CC) -dumpmachine | sed -e s'/-.*//' \
 		)
 endif
 
-# Pull in the user's busybox configuration
-ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
--include $(top_builddir)/.config
-endif
-
 # A nifty macro to make testing gcc features easier
 check_gcc=$(shell \
 	if [ "$(1)" != "" ]; then \
@@ -128,6 +122,8 @@ else
 export MAKE_IS_SILENT=y
 SECHO=-@false
 endif
+
+CFLAGS+=$(call check_gcc,-funsigned-char,)
 
 #--------------------------------------------------------
 # Arch specific compiler optimization stuff should go here.
@@ -208,5 +204,17 @@ endif
 # Put user-supplied flags at the end, where they
 # have a chance of winning.
 CFLAGS += $(CFLAGS_EXTRA)
+
+#------------------------------------------------------------
+# Installation options
+ifeq ($(strip $(CONFIG_INSTALL_APPLET_HARDLINKS)),y)
+INSTALL_OPTS=--hardlinks
+endif
+ifeq ($(strip $(CONFIG_INSTALL_APPLET_SYMLINKS)),y)
+INSTALL_OPTS=--symlinks
+endif
+ifeq ($(strip $(CONFIG_INSTALL_APPLET_DONT)),y)
+INSTALL_OPTS=
+endif
 
 .PHONY: dummy
