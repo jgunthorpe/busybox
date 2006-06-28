@@ -17,6 +17,7 @@
 #include <string.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include "busybox.h"
 #if ENABLE_SELINUX
 #include <selinux/selinux.h>  /* for is_selinux_enabled()  */
@@ -73,7 +74,7 @@ extern int ps_main(int argc, char **argv)
 	  printf("  PID Context                          Stat Command\n");
 	else
 #endif
-	  printf("  PID  Uid     VmSize Stat Command\n");
+	  printf("  PID  Uid     VmSize Stat  Time Command\n");
 
 	while ((p = procps_scan(1)) != 0)  {
 		char *namecmd = p->cmd;
@@ -106,6 +107,12 @@ extern int ps_main(int argc, char **argv)
 		  else
 		    len = printf("%5d %-8s %6ld %s ", p->pid, p->user, p->rss, p->state);
 
+#ifdef CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
+		{
+		    unsigned long secs = (p->stime + p->utime) / HZ;
+		    len += printf("%3d:%02d ", secs / 60, secs % 60);
+		}
+#endif
 		i = terminal_width-len;
 
 		if(namecmd && namecmd[0]) {
