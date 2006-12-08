@@ -10,28 +10,37 @@ all: build
 
 # Busybox explodes on parallel make.
 build:
-	$(MAKE) -j1 -C $(BUILD)
+	$(MAKE) -j1 -C $(BUILD)/static
+	$(MAKE) -j1 -C $(BUILD)/dynamic
 
 ifeq ($(words $(wildcard $(BUILD)/.config)),0)
 build: setup
 endif
 
-setup: $(BUILD)/.config
+setup: $(BUILD)/static/.config $(BUILD)/dynamic/.config
 
 ifdef LINK
 link:
 	mkdir -p $(LINK)/bin
-	ln -sf $(BUILD)/busybox $(LINK)/bin/busybox
-	ln -sf $(BUILD)/busybox.links $(LINK)/bin/busybox.links
+	ln -sf $(BUILD)/static/busybox $(LINK)/bin/busybox
+	ln -sf $(BUILD)/static/busybox.links $(LINK)/bin/busybox.links
+	ln -sf $(BUILD)/dynamic/busybox $(LINK)/bin/busybox.dynamic
 endif
 
-CX_FILES := $(BUILD)/busybox xbin/ \
-            $(BUILD)/busybox.links xbin/
+CX_FILES := $(BUILD)/static/busybox xbin/ \
+            $(BUILD)/static/busybox.links xbin/ \
+            $(BUILD)/dynamic/busybox xbin/busybox.dynamic
 
 cx-install: build
 	$(CX)/bin/cx-install -x $(CX) -b busybox -p glibc -c "busybox\ndir `/bin/pwd`\ncommit `git-rev-parse HEAD`" -- $(CX_FILES)
 
-$(BUILD)/.config: .config
-	mkdir -p $(BUILD)
+$(BUILD)/static/.config: .config
+	mkdir -p $(@D)
 	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CROSS)"|' < $< > $@
-	$(MAKE) -j1 O=$(BUILD) oldconfig > /dev/null
+	$(MAKE) -j1 O=$(@D) oldconfig > /dev/null
+
+$(BUILD)/dynamic/.config: .config
+	mkdir -p $(@D)
+	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CROSS)"|' \
+            -e 's|CONFIG_STATIC=y|CONFIG_STATIC=n|' < $< > $@
+	$(MAKE) -j1 O=$(@D) oldconfig > /dev/null
