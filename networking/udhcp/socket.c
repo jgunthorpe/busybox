@@ -27,6 +27,7 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -103,6 +104,7 @@ int listen_socket(uint32_t ip, int port, char *inf)
 		return -1;
 	}
 
+	fcntl(fd,F_SETFD,FD_CLOEXEC);
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);

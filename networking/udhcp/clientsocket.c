@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <features.h>
 #if __GLIBC__ >=2 && __GLIBC_MINOR >= 1
@@ -49,6 +50,7 @@ int raw_socket(int ifindex)
 		return -1;
 	}
 
+	fcntl(fd,F_SETFD,FD_CLOEXEC);
 	sock.sll_family = AF_PACKET;
 	sock.sll_protocol = htons(ETH_P_IP);
 	sock.sll_ifindex = ifindex;
