@@ -2144,6 +2144,14 @@
 	" or\n" \
 	"$ nameif -c /etc/my_mactab_file\n" \
 
+#define nbd_client_trivial_usage \
+        "Usage: nbd-client [bs=blocksize] host port nbd_device [-swap]"
+#define nbd_client_full_usage \
+	"Usage: nbd-client [bs=blocksize] host port nbd_device [-swap]\n" \
+	"Or   : nbd-client -d nbd_device\n" \
+	"Default value for blocksize is 1024 (recommended for ethernet)\n" \
+	"Allowed values for blocksize are 512,1024,2048,4096\n"
+
 #ifdef CONFIG_NC_GAPING_SECURITY_HOLE
 #  define USAGE_NC_EXEC(a) a
 #else

@@ -469,6 +469,9 @@
 #ifdef CONFIG_NAMEIF
 	APPLET(nameif, nameif_main, _BB_DIR_SBIN, _BB_SUID_NEVER)
 #endif
+#ifdef CONFIG_NBD_CLIENT
+	APPLET_ODDNAME("nbd-client", nbd_client_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER, nbd_client)
+#endif
 #ifdef CONFIG_NC
 	APPLET(nc, nc_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
 #endif

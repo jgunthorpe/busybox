@@ -36,6 +36,7 @@ UTILLINUX-$(CONFIG_READPROFILE)   +=readprofile.o
 UTILLINUX-$(CONFIG_SWAPONOFF)     +=swaponoff.o
 UTILLINUX-$(CONFIG_SWITCH_ROOT)   +=switch_root.o
 UTILLINUX-$(CONFIG_UMOUNT)        +=umount.o
+UTILLINUX-$(CONFIG_NBD_CLIENT)    +=nbd-client.o
 
 libraries-y+=$(UTILLINUX_DIR)$(UTILLINUX_AR)
 

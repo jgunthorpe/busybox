@@ -298,6 +298,12 @@ config CONFIG_MORE
 	  you will probably find this utility very helpful.  If you don't have
 	  any need to reading text files, you can leave this disabled.
 
+config CONFIG_NBD_CLIENT
+	bool "nbd-client"
+	default n
+	help
+	  nbd-client configures network block devices in the Linux kernel.
+
 config CONFIG_FEATURE_USE_TERMIOS
 	bool "  Use termios to manipulate the screen"
 	default y
