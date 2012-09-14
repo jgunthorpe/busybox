@@ -16,7 +16,6 @@
 /* This header file is shared by client & server. They really have
  * something to share...
  * */
-#include <asm/page.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
