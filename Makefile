@@ -4,6 +4,7 @@
 #
 # Licensed under GPLv2, see the file LICENSE in this tarball for details.
 #
+SHELL := /bin/bash
 
 #--------------------------------------------------------------
 # You shouldn't need to mess with anything beyond this point...
