@@ -234,6 +234,13 @@ static void sendping(int junk)
 	}
 }
 
+// For newer glibc
+#ifndef ICMP6_MEMBERSHIP_QUERY
+#define ICMP6_MEMBERSHIP_QUERY MLD_LISTENER_QUERY
+#define ICMP6_MEMBERSHIP_REDUCTION MLD_LISTENER_REDUCTION
+#define ICMP6_MEMBERSHIP_REPORT MLD_LISTENER_REPORT
+#endif
+
 static char *icmp6_type_name (int id)
 {
 	switch (id) {
