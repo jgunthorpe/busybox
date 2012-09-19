@@ -3,21 +3,19 @@
 
 CX ?= /opt/ppc32/cx
 BUILD ?= build
-CROSS := $(CX)/bin/powerpc-405-linux-gnu-
+TUPLES := powerpc-405-linux-gnu arm-v5te-linux-gnueabi
 
 .PHONY: all setup link build cx-install
 all: build
 
+BUILDS := $(foreach I,$(TUPLES),$(BUILD)/static-$(I) $(BUILD)/dynamic-$(I))
+
 # Busybox explodes on parallel make.
-build:
-	$(MAKE) -j1 -C $(BUILD)/static
-	$(MAKE) -j1 -C $(BUILD)/dynamic
+$(addsuffix /built-stamp,$(BUILDS)): %/built-stamp : %/.config
+	$(MAKE) -j1 -C $*
 
-ifeq ($(words $(wildcard $(BUILD)/.config)),0)
-build: setup
-endif
-
-setup: $(BUILD)/static/.config $(BUILD)/dynamic/.config
+build: $(addsuffix /built-stamp,$(BUILDS))
+setup: $(addsuffix /.config,$(BUILDS))
 
 ifdef LINK
 link:
@@ -27,20 +25,22 @@ link:
 	ln -sf $(BUILD)/dynamic/busybox $(LINK)/bin/busybox.dynamic
 endif
 
-CX_FILES := $(BUILD)/static/busybox xbin/ \
-            $(BUILD)/static/busybox.links xbin/ \
-            $(BUILD)/dynamic/busybox xbin/busybox.dynamic
+CX_FILES := $(foreach I,$(TUPLES), \
+		$(BUILD)/static-$(I)/busybox $(I)/bin/ \
+		$(BUILD)/static-$(I)/busybox.links $(I)/bin/ \
+	        $(BUILD)/dynamic-$(I)/busybox $(I)/bin/busybox.dynamic)
+$(warning $(CX_FILES))
 
 cx-install: build
-	$(CX)/bin/cx-install -x $(CX) -b busybox -p glibc -c "busybox\ndir `/bin/pwd`\ncommit `git-rev-parse HEAD`" -- $(CX_FILES)
+	$(CX)/bin/cx-install -x $(CX) -b busybox $(addprefix -p toolchain-,$(TUPLES)) -c "busybox\ndir `/bin/pwd`\ncommit `git rev-parse HEAD`" -- $(CX_FILES)
 
-$(BUILD)/static/.config: .config
+$(BUILD)/static-%/.config: .config
 	mkdir -p $(@D)
-	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CROSS)"|' < $< > $@
+	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CX)/bin/$*-"|' < $< > $@
 	$(MAKE) -j1 O=$(@D) oldconfig > /dev/null
 
-$(BUILD)/dynamic/.config: .config
+$(BUILD)/dynamic-%/.config: .config
 	mkdir -p $(@D)
-	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CROSS)"|' \
+	sed -e 's|CROSS_COMPILER_PREFIX.*|CROSS_COMPILER_PREFIX="$(CX)/bin/$*-"|' \
             -e 's|CONFIG_STATIC=y|CONFIG_STATIC=n|' < $< > $@
 	$(MAKE) -j1 O=$(@D) oldconfig > /dev/null
